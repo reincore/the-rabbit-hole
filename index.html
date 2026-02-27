@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Antigravity | Intellectual Boundary Expansion Engine</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons mapping -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <!-- Animated background layers -->
+    <div class="bg-layer layer-1"></div>
+    <div class="bg-layer layer-2"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Navigation Header -->
+    <header class="glass-header">
+      <div class="header-content">
+        <div class="logo">
+          <i data-lucide="triangle" class="logo-icon glow-neon"></i>
+          <h1>ANTIGRAVITY</h1>
+        </div>
+        <button id="settings-btn" class="icon-btn" title="API Settings">
+          <i data-lucide="settings"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- Input Section -->
+      <section class="input-section glass-panel">
+        <div class="input-header">
+          <h2>Establish Launchpad</h2>
+          <p>Provide your current knowledge gravity well—topics, notes, or interests.</p>
+        </div>
+        
+        <textarea id="user-input" placeholder="e.g., I've been studying artificial neural networks and how they match the brain's visual cortex..." rows="4"></textarea>
+
+        <div class="controls">
+          <div class="mode-selector">
+            <label for="mode-select">Vector Mode</label>
+            <div class="select-wrapper">
+              <select id="mode-select">
+                <option value="standard">Standard Engine</option>
+                <option value="stranger_danger">Stranger Danger (Extreme Serendipity)</option>
+                <option value="collision">Collision (Two Unrelated Fields)</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-icon"></i>
+            </div>
+          </div>
+          
+          <button id="generate-btn" class="primary-btn glow-purple">
+            <span class="btn-text">Initiate Escape Sequence</span>
+            <i data-lucide="rocket" class="btn-icon"></i>
+            <div class="btn-loader hidden"></div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Results Section -->
+      <section id="results-area" class="results-area hidden">
+        <!-- Loader / Status -->
+        <div id="status-container" class="status-container hidden">
+          <div class="orbital-loader"></div>
+          <p id="status-text" class="status-text">Calculating optimal serendipity routes...</p>
+        </div>
+
+        <div id="vectors-grid" class="vectors-grid">
+          <!-- Vectors injected via JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h3>Engine Configuration</h3>
+          <button id="close-modal-btn" class="icon-btn">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="form-group">
+          <label for="api-key">Google Gemini API Key</label>
+          <input type="password" id="api-key" placeholder="AIzaSy...">
+          <p class="help-text">Your key is stored locally in your browser and never sent to our servers.</p>
+        </div>
+        <button id="save-settings-btn" class="primary-btn secondary-btn">Save Configuration</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
