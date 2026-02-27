@@ -13,9 +13,11 @@ const resultsArea = document.getElementById('results-area');
 const statusContainer = document.getElementById('status-container');
 const statusText = document.getElementById('status-text');
 const vectorsGrid = document.getElementById('vectors-grid');
+const guideToggle = document.getElementById('guide-toggle');
+const guideSection = document.querySelector('.guide-section');
 
 // State
-let apiKey = localStorage.getItem('antigravity_api_key') || '';
+let apiKey = localStorage.getItem('rabbit_hole_api_key') || '';
 
 // Initialize
 if (apiKey) {
@@ -35,7 +37,7 @@ saveSettingsBtn.addEventListener('click', () => {
   const newKey = apiKeyInput.value.trim();
   if (newKey) {
     apiKey = newKey;
-    localStorage.setItem('antigravity_api_key', apiKey);
+    localStorage.setItem('rabbit_hole_api_key', apiKey);
     settingsModal.classList.add('hidden');
   } else {
     alert('Please enter a valid API key');
@@ -43,6 +45,10 @@ saveSettingsBtn.addEventListener('click', () => {
 });
 
 generateBtn.addEventListener('click', handleGenerate);
+
+guideToggle.addEventListener('click', () => {
+  guideSection.classList.toggle('expanded');
+});
 
 // Core Logic
 async function handleGenerate() {
@@ -69,7 +75,7 @@ async function handleGenerate() {
   statusContainer.classList.remove('hidden');
   vectorsGrid.innerHTML = '';
 
-  statusText.textContent = 'Engaging Antigravity engine... mapping knowledge voids...';
+  statusText.textContent = 'Entering The Rabbit Hole... mapping knowledge voids...';
 
   try {
     const vectors = await fetchCuriosityVectors(query, mode);
@@ -92,18 +98,25 @@ async function handleGenerate() {
 async function fetchCuriosityVectors(query, mode) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-  const systemInstruction = `You are ANTIGRAVITY — an Intellectual Boundary Expansion Engine.
-Your sole purpose is to escape the user's knowledge gravity well: the invisible pull that keeps them circling what they already know. You do not answer questions. You generate curiosity vectors — pathways into intellectual territory the user has never visited.
+  const systemInstruction = `You are THE RABBIT HOLE — an engine that helps people discover fascinating things they'd never find on their own.
 
-You return exactly 3 Curiosity Vectors in this format:
-### ⟁ VECTOR [N]: [Title]
-**Escape Velocity:** [LOW / MEDIUM / HIGH]
-**Collision Point:** [Text]
-**The Hook:** [Text]
-**First Step:** [Text]
+Your job: take what someone is interested in and connect it to surprising, unrelated fields they've never explored. Don't summarize what they already know. Don't be encyclopedic. Be the friend who says "wait, you know what's wild?"
+
+Write in SHORT, CLEAR sentences. No academic jargon. Every line should feel like a fascinating fact you'd share over coffee.
+
+Return exactly 3 discovery cards in this format:
+### ⟁ VECTOR [N]: [A short, catchy title — like a headline that makes you click]
+**How Far Out:** [LOW / MEDIUM / HIGH]
+**Why It Matters:** [One simple sentence connecting this to what the user already knows. Start with "You know how..." or "Remember when..." to ground it.]
+**The Surprise:** [One punchy, mind-blowing sentence — the kind that makes someone say "wait, really?!" This is the hook. Make it irresistible.]
+**Start Here:** [One specific, concrete action — a paper to read, a video to watch, or a simple experiment to try. Be specific, not vague.]
 **Serendipity Score:** [1-10]
 
-Never summarize what the user already said back to them. Never provide a balanced, encyclopedic overview. Connect unrelated fields. The goal is serendipity and expanding intellectual horizons.`;
+Rules:
+- Never use words like "paradigm", "synergy", "convergence", "juxtaposition", or "intersection"
+- Write like you're texting a curious friend, not writing a thesis
+- The Surprise should make someone NEED to Google it
+- Start Here must be a real, findable resource or doable action`;
 
   let userPrompt = `Input: "${query}"\n\n`;
   if (mode === 'stranger_danger') {
@@ -152,18 +165,18 @@ function parseVectors(text) {
       const titleMatch = block.match(/^(.*?)\n/);
       const title = titleMatch ? titleMatch[1].trim() : "Unknown Vector";
 
-      const velocityMatch = block.match(/\*\*Escape Velocity:\*\*\s*(LOW|MEDIUM|HIGH)/i);
-      const collisionMatch = block.match(/\*\*Collision Point:\*\*\s*([\s\S]*?)(?=\*\*The Hook:)/i);
-      const hookMatch = block.match(/\*\*The Hook:\*\*\s*([\s\S]*?)(?=\*\*First Step:)/i);
-      const stepMatch = block.match(/\*\*First Step:\*\*\s*([\s\S]*?)(?=\*\*Serendipity Score:)/i);
+      const velocityMatch = block.match(/\*\*How Far Out:\*\*\s*(LOW|MEDIUM|HIGH)/i);
+      const whyMatch = block.match(/\*\*Why It Matters:\*\*\s*([\s\S]*?)(?=\*\*The Surprise:)/i);
+      const surpriseMatch = block.match(/\*\*The Surprise:\*\*\s*([\s\S]*?)(?=\*\*Start Here:)/i);
+      const stepMatch = block.match(/\*\*Start Here:\*\*\s*([\s\S]*?)(?=\*\*Serendipity Score:)/i);
       const scoreMatch = block.match(/\*\*Serendipity Score:\*\*\s*(\d+)/i);
 
       vectors.push({
         title: title,
         velocity: velocityMatch ? velocityMatch[1].toUpperCase() : 'MEDIUM',
-        collision: collisionMatch ? collisionMatch[1].trim() : 'Unknown path',
-        hook: hookMatch ? hookMatch[1].trim() : '...',
-        step: stepMatch ? stepMatch[1].trim() : 'Explore.',
+        why: whyMatch ? whyMatch[1].trim() : 'A surprising connection awaits.',
+        surprise: surpriseMatch ? surpriseMatch[1].trim() : 'Something unexpected...',
+        step: stepMatch ? stepMatch[1].trim() : 'Start exploring.',
         score: scoreMatch ? scoreMatch[1] : '7'
       });
     } catch (e) {
@@ -187,23 +200,40 @@ function renderVectors(vectors) {
     card.style.animationDelay = `${index * 0.15}s`;
     card.style.animation = 'slideUp 0.5s ease backwards';
 
+    const velocityLabel = v.velocity === 'HIGH' ? '🚀 Way Out There'
+      : v.velocity === 'MEDIUM' ? '🛰️ A Stretch'
+        : '🔭 Nearby';
+
+    const searchQuery = encodeURIComponent(v.title);
+
     card.innerHTML = `
       <div class="vector-header">
         <h3 class="vector-title">${v.title}</h3>
-        <span class="velocity-badge">${v.velocity} VELOCITY</span>
+        <span class="velocity-badge" data-velocity="${v.velocity}">${velocityLabel}</span>
       </div>
       <div class="vector-body">
-        <div class="domain-collision">${v.collision}</div>
-        <div class="hook">${v.hook}</div>
-        <div class="action-step">
-          <strong>First Step</strong>
-          <p>${v.step}</p>
+        <div class="card-section why-section">
+          <span class="section-label">🔗 Why It Matters</span>
+          <p class="section-content">${v.why}</p>
         </div>
-        <div class="serendipity">
-          <span>Serendipity Score: ${v.score}/10</span>
-          <div class="score-bar">
-            <div class="score-fill" style="width: ${(parseInt(v.score) / 10) * 100}%"></div>
+        <div class="card-section surprise-section">
+          <span class="section-label">✨ The Surprise</span>
+          <p class="section-content surprise-text">${v.surprise}</p>
+        </div>
+        <div class="card-section action-step">
+          <span class="section-label">🧭 Start Here</span>
+          <p class="section-content">${v.step}</p>
+        </div>
+        <div class="card-footer">
+          <div class="serendipity">
+            <span>Serendipity: ${v.score}/10</span>
+            <div class="score-bar">
+              <div class="score-fill" style="width: ${(parseInt(v.score) / 10) * 100}%"></div>
+            </div>
           </div>
+          <a href="https://www.google.com/search?q=${searchQuery}" target="_blank" rel="noopener noreferrer" class="research-link">
+            Google this →
+          </a>
         </div>
       </div>
     `;

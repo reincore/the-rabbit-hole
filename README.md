@@ -1,10 +1,10 @@
-# Antigravity Engine
+# The Rabbit Hole Engine
 
-**Antigravity** is an Intellectual Boundary Expansion Engine. Its sole purpose is to help you escape your knowledge gravity well—the invisible pull that keeps you circling what you already know. 
+**The Rabbit Hole** is an Intellectual Boundary Expansion Engine. Its sole purpose is to help you escape your knowledge gravity well—the invisible pull that keeps you circling what you already know. 
 
 It does not answer questions. It generates **Curiosity Vectors**: pathways into intellectual territory you have never visited.
 
-![Antigravity Demo](public/vite.svg) *// TODO: Add actual screenshot*
+![The Rabbit Hole Demo](public/vite.svg) *// TODO: Add actual screenshot*
 
 ## Overview
 
