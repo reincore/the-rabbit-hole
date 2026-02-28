@@ -43,6 +43,8 @@ body {
   height: 100vh;
   z-index: -2;
   pointer-events: none;
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 .layer-1 {
@@ -70,17 +72,17 @@ body {
   pointer-events: none;
   mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes pulseBg {
   0% {
-    opacity: 0.5;
-    transform: scale(1);
+    opacity: 0.4;
   }
 
   100% {
-    opacity: 1;
-    transform: scale(1.1);
+    opacity: 0.8;
   }
 }
 
@@ -135,6 +137,8 @@ h2 {
   z-index: 100;
   display: flex;
   justify-content: center;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .header-content {
@@ -185,6 +189,8 @@ h2 {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Input Section */
@@ -393,6 +399,8 @@ select:focus {
   font-size: 0.9rem;
   text-transform: uppercase;
   animation: pulseText 2s infinite alternate;
+  text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
+  will-change: opacity;
 }
 
 @keyframes pulseText {
@@ -402,7 +410,6 @@ select:focus {
 
   100% {
     opacity: 1;
-    text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
   }
 }
 
