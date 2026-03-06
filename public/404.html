@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Redirecting — The Rabbit Hole</title>
+    <script>
+        // GitHub Pages serves this for any path that doesn't match a file.
+        // Preserve the original path + query params by encoding them into the
+        // index URL so the SPA can pick them up on load.
+        var seg = window.location.pathname.replace('/the-rabbit-hole/', '');
+        var search = window.location.search;
+        var target = '/the-rabbit-hole/' + (search ? search : '');
+        window.location.replace(target);
+    </script>
+</head>
+
+<body>
+    <p>Redirecting&hellip;</p>
+</body>
+
+</html>
