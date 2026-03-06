@@ -1,6 +1,6 @@
 import './style.css'
 
-// DOM Elements
+// ─── DOM Elements ────────────────────────────────────────────────────────────
 const settingsBtn = document.getElementById('settings-btn');
 const settingsModal = document.getElementById('settings-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
@@ -15,16 +15,33 @@ const statusText = document.getElementById('status-text');
 const vectorsGrid = document.getElementById('vectors-grid');
 const guideToggle = document.getElementById('guide-toggle');
 const guideSection = document.querySelector('.guide-section');
+const historyPanel = document.getElementById('history-panel');
+const historyToggle = document.getElementById('history-toggle');
+const historyList = document.getElementById('history-list');
+const clearHistoryBtn = document.getElementById('clear-history-btn');
+const toastContainer = document.getElementById('toast-container');
 
-// State
+// ─── State ───────────────────────────────────────────────────────────────────
 let apiKey = localStorage.getItem('rabbit_hole_api_key') || '';
+const HISTORY_KEY = 'rabbit_hole_history';
 
-// Initialize
+// ─── Initialize ──────────────────────────────────────────────────────────────
 if (apiKey) {
   apiKeyInput.value = apiKey;
 }
 
-// Event Listeners
+// ─── Dynamic Placeholders (Task 3.1) ─────────────────────────────────────────
+const PLACEHOLDERS = {
+  standard: "e.g., I've been studying artificial neural networks and how they match the brain's visual cortex...",
+  deep_wilderness: "e.g., philosophy of science, stoic ethics, the history of zero...",
+  collision: "e.g., Byzantine architecture / competitive powerlifting"
+};
+
+modeSelect.addEventListener('change', () => {
+  userInput.placeholder = PLACEHOLDERS[modeSelect.value] || PLACEHOLDERS.standard;
+});
+
+// ─── Event Listeners ─────────────────────────────────────────────────────────
 settingsBtn.addEventListener('click', () => {
   settingsModal.classList.remove('hidden');
 });
@@ -39,8 +56,9 @@ saveSettingsBtn.addEventListener('click', () => {
     apiKey = newKey;
     localStorage.setItem('rabbit_hole_api_key', apiKey);
     settingsModal.classList.add('hidden');
+    showToast('API key saved successfully');
   } else {
-    alert('Please enter a valid API key');
+    showToast('Please enter a valid API key', 'error');
   }
 });
 
@@ -50,20 +68,222 @@ guideToggle.addEventListener('click', () => {
   guideSection.classList.toggle('expanded');
 });
 
-// Core Logic
+historyToggle.addEventListener('click', () => {
+  historyPanel.classList.toggle('expanded');
+});
+
+clearHistoryBtn.addEventListener('click', () => {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+  showToast('History cleared');
+});
+
+// ─── Toast Notifications ─────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+// ─── Error State UI (Task 3.4) ───────────────────────────────────────────────
+function classifyError(error, response) {
+  if (!apiKey) {
+    return {
+      icon: '🔑',
+      title: 'No API Key',
+      message: 'No API key configured. Click the ⚙️ icon to add your Gemini key.',
+      action: { label: 'Open Settings', handler: () => settingsModal.classList.remove('hidden') }
+    };
+  }
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return {
+      icon: '📡',
+      title: 'Network Error',
+      message: "Can't reach Google's servers. Check your internet connection and try again.",
+      action: null
+    };
+  }
+  if (response && response.status === 400) {
+    return {
+      icon: '🔐',
+      title: 'Invalid API Key',
+      message: 'Your API key was rejected by Google. Double-check it in Settings.',
+      action: { label: 'Open Settings', handler: () => settingsModal.classList.remove('hidden') }
+    };
+  }
+  if (response && response.status === 429) {
+    return {
+      icon: '⏳',
+      title: 'Quota Exceeded',
+      message: "You've hit your API quota limit. Wait a few minutes or check your quota in Google AI Studio.",
+      action: null
+    };
+  }
+  if (error.message.includes('parse') || error.message.includes('JSON') || error.message.includes('unexpected')) {
+    return {
+      icon: '⚠️',
+      title: 'Unexpected Response',
+      message: 'The AI returned an unexpected response. Try a different input or try again.',
+      action: null
+    };
+  }
+  return {
+    icon: '❌',
+    title: 'Something Went Wrong',
+    message: error.message || 'An unknown error occurred.',
+    action: null
+  };
+}
+
+function showError(errorInfo) {
+  vectorsGrid.innerHTML = '';
+  statusContainer.classList.add('hidden');
+
+  const errorCard = document.createElement('div');
+  errorCard.className = 'error-card glass-panel';
+  errorCard.innerHTML = `
+    <div class="error-card-inner">
+      <span class="error-icon">${errorInfo.icon}</span>
+      <div class="error-content">
+        <h3 class="error-title">${errorInfo.title}</h3>
+        <p class="error-message">${errorInfo.message}</p>
+        ${errorInfo.action ? `<button class="error-action-btn primary-btn">${errorInfo.action.label}</button>` : ''}
+      </div>
+    </div>
+  `;
+
+  if (errorInfo.action) {
+    errorCard.querySelector('.error-action-btn').addEventListener('click', errorInfo.action.handler);
+  }
+
+  vectorsGrid.appendChild(errorCard);
+}
+
+// ─── Prompt Architecture (Task 2) ────────────────────────────────────────────
+const RESPONSE_SCHEMA = {
+  type: "ARRAY",
+  items: {
+    type: "OBJECT",
+    properties: {
+      title: { type: "STRING", description: "Short, catchy vector title — like a headline that makes you click" },
+      coreConcept: { type: "STRING", description: "1–2 sentence explanation of what this new intellectual territory is" },
+      whyItMatters: { type: "STRING", description: "1–2 sentences connecting this back to the user's input. Start with 'You know how...' or 'Remember when...' to ground it." },
+      theSurprise: { type: "STRING", description: "One punchy, mind-blowing sentence — the hook that makes someone say 'wait, really?!'" },
+      deepDiveQuery: { type: "STRING", description: "A well-formed Google search query string (NOT a URL) for exploring this vector further" },
+      serendipityScore: { type: "INTEGER", description: "1–10 score: how unlikely the user was to discover this on their own" },
+      distance: { type: "STRING", enum: ["LOW", "MEDIUM", "HIGH"], description: "Conceptual distance from the user's input" }
+    },
+    required: ["title", "coreConcept", "whyItMatters", "theSurprise", "deepDiveQuery", "serendipityScore", "distance"]
+  }
+};
+
+const SYSTEM_PROMPTS = {
+  standard: `You are THE RABBIT HOLE — a serendipity engine that helps people discover ideas they would never find on their own.
+
+Your job: take the user's input concept and return exactly 3 "Curiosity Vectors" — surprising connections to completely different fields the user has never considered.
+
+RULES:
+- Each vector must cross into a DIFFERENT domain from the input (e.g., if the input is about biology, vectors should pull from art, economics, materials science — not other biology topics).
+- Write in SHORT, CLEAR sentences. No academic jargon. Every line should feel like a fascinating fact shared over coffee.
+- The "whyItMatters" field must start with "You know how..." or "Remember when..." to anchor it to the user's existing knowledge.
+- The "theSurprise" must be a single sentence that would make someone stop scrolling and say "wait, really?!"
+- The "deepDiveQuery" must be a well-formed Google search query string (NOT a URL) — specific enough to surface relevant results.
+- Never use these words: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
+- Return exactly 3 vectors as a JSON array. No extra text, no markdown — pure JSON.`,
+
+  deep_wilderness: `You are THE RABBIT HOLE operating in DEEP WILDERNESS mode — maximum serendipity, zero comfort zone.
+
+Your job: return exactly 3 Curiosity Vectors that are as conceptually distant as possible from the user's input.
+
+HARD CONSTRAINTS:
+1. ZERO VOCABULARY OVERLAP: No vector title, coreConcept, whyItMatters, or theSurprise may share any root word with the user's input. If the input is "neural networks", you may not use "neural", "network", "neuron", "net", "brain", or "connected" in any output field.
+2. ZERO DOMAIN OVERLAP: No vector may come from the same field, discipline, or industry as the input. If the input is about computer science, no vector may come from technology, software, or engineering.
+3. NO COMMON ANALOGIES: Reject any vector where the connection relies on a well-known analogy or metaphor (e.g., "the brain is like a computer" is BANNED).
+4. SERENDIPITY FLOOR: Every vector MUST have a serendipityScore of 8 or higher. If a vector scores below 8, discard it and generate a replacement.
+5. SELF-CHECK: Before finalizing each vector, mentally verify: "Could a person studying the input topic have stumbled on this within 3 clicks?" If yes, discard it.
+
+STYLE:
+- Write like you're texting a curious friend, not writing a thesis.
+- The "theSurprise" must induce genuine cognitive dissonance — the reader should feel their mental model shift.
+- The "deepDiveQuery" must be a well-formed Google search query string (NOT a URL).
+- Never use: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
+- Return exactly 3 vectors as a JSON array. No extra text.`,
+
+  collision: `You are THE RABBIT HOLE operating in COLLISION MODE — the particle accelerator of ideas.
+
+The user will provide two unrelated fields. Your job: find exactly 3 Curiosity Vectors that exist EXCLUSIVELY at the intersection of both fields — ideas that could NOT have been predicted by an expert in either field individually.
+
+HARD CONSTRAINTS:
+1. GENUINE INTERSECTION ONLY: Each vector must require knowledge of BOTH input fields to make sense. If you remove either field and the vector still works, discard it.
+2. EMERGENT NOVELTY: The output concept must be something that only becomes visible when both input concepts are held in mind simultaneously. A domain expert in Field A should find it surprising; a domain expert in Field B should find it surprising; but someone thinking about BOTH should feel the click of recognition.
+3. NO SURFACE-LEVEL MASHUPS: Do not simply alternate facts from each field. The vector must represent a genuine conceptual collision — a new idea born from the impact.
+4. UNPREDICTABILITY TEST: Before finalizing each vector, ask: "Would a panel of 100 experts in Field A and 100 experts in Field B independently predict this connection?" If more than 5 would, discard it.
+
+STYLE:
+- Write in SHORT, CLEAR sentences. No academic jargon.
+- The "whyItMatters" must explain why BOTH fields are necessary for this insight.
+- The "theSurprise" must make the reader feel the collision — the moment two unrelated things snap together.
+- The "deepDiveQuery" must be a well-formed Google search query string (NOT a URL).
+- Never use: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
+- Return exactly 3 vectors as a JSON array. No extra text.`
+};
+
+const MODE_TEMPERATURES = {
+  standard: 0.9,
+  deep_wilderness: 1.2,
+  collision: 1.0
+};
+
+function buildUserPrompt(query, mode) {
+  if (mode === 'collision') {
+    const parts = query.split('/').map(s => s.trim()).filter(Boolean);
+    if (parts.length < 2) {
+      throw new Error('COLLISION_FORMAT');
+    }
+    return `Collision input: "${parts[0]}" + "${parts[1]}"\n\nFind 3 vectors that exist ONLY at the collision point of these two fields. Each idea must be impossible to reach from either field alone.`;
+  }
+  if (mode === 'deep_wilderness') {
+    return `Input concept: "${query}"\n\nGenerate 3 Deep Wilderness vectors. Each must score 8+ on serendipity, share ZERO vocabulary with my input, and come from a completely alien domain. Prioritize cognitive dissonance over comfort.`;
+  }
+  return `My current concept: "${query}"\n\nReturn 3 Curiosity Vectors that escape this concept's gravity well. Each vector must come from a different, unrelated domain.`;
+}
+
+// ─── Core Logic ──────────────────────────────────────────────────────────────
 async function handleGenerate() {
   const query = userInput.value.trim();
   if (!query) {
-    alert('Please provide some input to launch from.');
+    showError(classifyError(new Error('empty_input')));
+    resultsArea.classList.remove('hidden');
     return;
   }
   if (!apiKey) {
-    alert('Please configure your Gemini API Key in Settings first.');
-    settingsModal.classList.remove('hidden');
+    showError(classifyError(new Error('no_key')));
+    resultsArea.classList.remove('hidden');
     return;
   }
 
   const mode = modeSelect.value;
+
+  // Validate collision mode format
+  if (mode === 'collision') {
+    const parts = query.split('/').map(s => s.trim()).filter(Boolean);
+    if (parts.length < 2) {
+      resultsArea.classList.remove('hidden');
+      showError({
+        icon: '💥',
+        title: 'Two Concepts Needed',
+        message: 'Collision Mode needs two concepts separated by / — e.g., "origami / jazz".',
+        action: null
+      });
+      return;
+    }
+  }
 
   // UI Loading State
   generateBtn.disabled = true;
@@ -76,62 +296,37 @@ async function handleGenerate() {
   vectorsGrid.innerHTML = '';
 
   statusText.textContent = 'Entering The Rabbit Hole... mapping knowledge voids...';
+  statusText.style.color = '';
+
+  let lastResponse = null;
 
   try {
-    const vectors = await fetchCuriosityVectors(query, mode);
+    const vectors = await fetchCuriosityVectors(query, mode, (resp) => { lastResponse = resp; });
     renderVectors(vectors);
+    saveToHistory(query, mode, vectors);
+    updateShareURL(query, mode);
+    statusContainer.classList.add('hidden');
   } catch (error) {
     console.error(error);
-    statusText.textContent = 'Error: ' + error.message;
-    statusText.style.color = 'red';
+    showError(classifyError(error, lastResponse));
   } finally {
     generateBtn.disabled = false;
     generateBtn.querySelector('.btn-text').textContent = 'Initiate Escape Sequence';
     generateBtn.querySelector('.btn-icon').classList.remove('hidden');
     generateBtn.querySelector('.btn-loader').classList.add('hidden');
-    if (statusText.style.color !== 'red') {
-      statusContainer.classList.add('hidden');
-    }
   }
 }
 
-async function fetchCuriosityVectors(query, mode) {
+async function fetchCuriosityVectors(query, mode, onResponse) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-  const systemInstruction = `You are THE RABBIT HOLE — an engine that helps people discover fascinating things they'd never find on their own.
-
-Your job: take what someone is interested in and connect it to surprising, unrelated fields they've never explored. Don't summarize what they already know. Don't be encyclopedic. Be the friend who says "wait, you know what's wild?"
-
-Write in SHORT, CLEAR sentences. No academic jargon. Every line should feel like a fascinating fact you'd share over coffee.
-
-Return exactly 3 discovery cards in this format:
-### ⟁ VECTOR [N]: [A short, catchy title — like a headline that makes you click]
-**How Far Out:** [LOW / MEDIUM / HIGH]
-**Why It Matters:** [One simple sentence connecting this to what the user already knows. Start with "You know how..." or "Remember when..." to ground it.]
-**The Surprise:** [One punchy, mind-blowing sentence — the kind that makes someone say "wait, really?!" This is the hook. Make it irresistible.]
-**Start Here:** [One specific, concrete action — a paper to read, a video to watch, or a simple experiment to try. Be specific, not vague.]
-**Serendipity Score:** [1-10]
-
-Rules:
-- Never use words like "paradigm", "synergy", "convergence", "juxtaposition", or "intersection"
-- Write like you're texting a curious friend, not writing a thesis
-- The Surprise should make someone NEED to Google it
-- Start Here must be a real, findable resource or doable action`;
-
-  let userPrompt = `Input: "${query}"\n\n`;
-  if (mode === 'stranger_danger') {
-    userPrompt += `Mode: Stranger Danger Mode. All vectors must have Serendipity Score >= 8. No topic may share any vocabulary with the user's input. Provide the 3 Vectors strictly.`;
-  } else if (mode === 'collision') {
-    userPrompt += `Mode: Collision Mode. Treat the user's input as two or more unrelated fields. Find what exists at their intersection and build 3 vectors from that collision point only.`;
-  } else {
-    userPrompt += `Mode: Standard. Return 3 Curiosity vectors based on the input to escape their conceptual boundaries.`;
-  }
+  const systemInstruction = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.standard;
+  const userPrompt = buildUserPrompt(query, mode);
+  const temperature = MODE_TEMPERATURES[mode] || 0.9;
 
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       systemInstruction: {
         parts: [{ text: systemInstruction }]
@@ -140,99 +335,93 @@ Rules:
         parts: [{ text: userPrompt }]
       }],
       generationConfig: {
-        temperature: 0.9,
+        temperature,
+        response_mime_type: "application/json",
+        response_schema: RESPONSE_SCHEMA
       }
     })
   });
 
+  if (onResponse) onResponse(response);
+
   if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err.error?.message || 'Failed to fetch from Gemini');
+    let errMsg = 'Failed to fetch from Gemini';
+    try {
+      const err = await response.json();
+      errMsg = err.error?.message || errMsg;
+    } catch (_) { /* ignore parse error */ }
+    const error = new Error(errMsg);
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text;
 
-  return parseVectors(text);
-}
-
-function parseVectors(text) {
-  const blocks = text.split(/###\s*⟁\s*VECTOR\s*\d+:/i).filter(b => b.trim().length > 0);
-  const vectors = [];
-
-  for (const block of blocks) {
-    try {
-      const titleMatch = block.match(/^(.*?)\n/);
-      const title = titleMatch ? titleMatch[1].trim() : "Unknown Vector";
-
-      const velocityMatch = block.match(/\*\*How Far Out:\*\*\s*(LOW|MEDIUM|HIGH)/i);
-      const whyMatch = block.match(/\*\*Why It Matters:\*\*\s*([\s\S]*?)(?=\*\*The Surprise:)/i);
-      const surpriseMatch = block.match(/\*\*The Surprise:\*\*\s*([\s\S]*?)(?=\*\*Start Here:)/i);
-      const stepMatch = block.match(/\*\*Start Here:\*\*\s*([\s\S]*?)(?=\*\*Serendipity Score:)/i);
-      const scoreMatch = block.match(/\*\*Serendipity Score:\*\*\s*(\d+)/i);
-
-      vectors.push({
-        title: title,
-        velocity: velocityMatch ? velocityMatch[1].toUpperCase() : 'MEDIUM',
-        why: whyMatch ? whyMatch[1].trim() : 'A surprising connection awaits.',
-        surprise: surpriseMatch ? surpriseMatch[1].trim() : 'Something unexpected...',
-        step: stepMatch ? stepMatch[1].trim() : 'Start exploring.',
-        score: scoreMatch ? scoreMatch[1] : '7'
-      });
-    } catch (e) {
-      console.error("Failed to parse block", block, e);
-    }
+  if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+    throw new Error('The AI returned an unexpected empty response.');
   }
 
-  if (vectors.length === 0) {
-    throw new Error("Could not parse vectors. Format might be incorrect.");
+  const text = data.candidates[0].content.parts[0].text;
+
+  let vectors;
+  try {
+    vectors = JSON.parse(text);
+  } catch (e) {
+    throw new Error('Failed to parse AI response as JSON.');
+  }
+
+  if (!Array.isArray(vectors) || vectors.length === 0) {
+    throw new Error('The AI returned an unexpected response format.');
   }
 
   return vectors.slice(0, 3);
 }
 
-
+// ─── Rendering ───────────────────────────────────────────────────────────────
 function renderVectors(vectors) {
+  vectorsGrid.innerHTML = '';
+
   vectors.forEach((v, index) => {
     const card = document.createElement('div');
     card.className = 'vector-card glass-panel';
-    card.dataset.velocity = v.velocity;
+    const dist = (v.distance || 'MEDIUM').toUpperCase();
+    card.dataset.velocity = dist;
     card.style.animationDelay = `${index * 0.15}s`;
     card.style.animation = 'slideUp 0.5s ease backwards';
 
-    const velocityLabel = v.velocity === 'HIGH' ? '🚀 Way Out There'
-      : v.velocity === 'MEDIUM' ? '🛰️ A Stretch'
+    const velocityLabel = dist === 'HIGH' ? '🚀 Way Out There'
+      : dist === 'MEDIUM' ? '🛰️ A Stretch'
         : '🔭 Nearby';
 
-    const searchQuery = encodeURIComponent(v.title);
+    const searchQuery = encodeURIComponent(v.deepDiveQuery || v.title);
 
     card.innerHTML = `
       <div class="vector-header">
-        <h3 class="vector-title">${v.title}</h3>
-        <span class="velocity-badge" data-velocity="${v.velocity}">${velocityLabel}</span>
+        <h3 class="vector-title">${escapeHtml(v.title)}</h3>
+        <span class="velocity-badge" data-velocity="${dist}">${velocityLabel}</span>
       </div>
       <div class="vector-body">
+        <div class="card-section core-section">
+          <span class="section-label">🧠 Core Concept</span>
+          <p class="section-content">${escapeHtml(v.coreConcept || '')}</p>
+        </div>
         <div class="card-section why-section">
           <span class="section-label">🔗 Why It Matters</span>
-          <p class="section-content">${v.why}</p>
+          <p class="section-content">${escapeHtml(v.whyItMatters || '')}</p>
         </div>
         <div class="card-section surprise-section">
           <span class="section-label">✨ The Surprise</span>
-          <p class="section-content surprise-text">${v.surprise}</p>
-        </div>
-        <div class="card-section action-step">
-          <span class="section-label">🧭 Start Here</span>
-          <p class="section-content">${v.step}</p>
+          <p class="section-content surprise-text">${escapeHtml(v.theSurprise || '')}</p>
         </div>
         <div class="card-footer">
           <div class="serendipity">
-            <span>Serendipity: ${v.score}/10</span>
+            <span>Serendipity: ${v.serendipityScore || 7}/10</span>
             <div class="score-bar">
-              <div class="score-fill" style="width: ${(parseInt(v.score) / 10) * 100}%"></div>
+              <div class="score-fill" style="width: ${(parseInt(v.serendipityScore || 7) / 10) * 100}%"></div>
             </div>
           </div>
           <a href="https://www.google.com/search?q=${searchQuery}" target="_blank" rel="noopener noreferrer" class="research-link">
-            Google this →
+            Deep dive →
           </a>
         </div>
       </div>
@@ -240,11 +429,130 @@ function renderVectors(vectors) {
     vectorsGrid.appendChild(card);
   });
 
+  // Copy Link button
+  const copyRow = document.createElement('div');
+  copyRow.className = 'copy-link-row';
+  copyRow.innerHTML = `
+    <button id="copy-link-btn" class="copy-link-btn" title="Copy shareable link">
+      <i data-lucide="link" class="copy-link-icon"></i>
+      <span>Copy shareable link</span>
+    </button>
+  `;
+  vectorsGrid.appendChild(copyRow);
+  copyRow.querySelector('#copy-link-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      showToast('Link copied to clipboard!');
+    }).catch(() => {
+      showToast('Failed to copy link', 'error');
+    });
+  });
+
   if (window.lucide) {
     window.lucide.createIcons();
   }
 }
 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ─── Saved History (Task 3.2) ────────────────────────────────────────────────
+function saveToHistory(query, mode, vectors) {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  history.unshift({
+    id: crypto.randomUUID(),
+    query,
+    mode,
+    vectors,
+    timestamp: Date.now()
+  });
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 20)));
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  historyList.innerHTML = '';
+
+  if (history.length === 0) {
+    historyList.innerHTML = '<p class="history-empty">No recent dives yet. Start exploring!</p>';
+    clearHistoryBtn.classList.add('hidden');
+    return;
+  }
+
+  clearHistoryBtn.classList.remove('hidden');
+
+  const modeLabels = {
+    standard: 'Standard',
+    deep_wilderness: 'Deep Wilderness',
+    collision: 'Collision'
+  };
+
+  history.forEach(item => {
+    const el = document.createElement('button');
+    el.className = 'history-item';
+    const timeAgo = getTimeAgo(item.timestamp);
+    el.innerHTML = `
+      <div class="history-item-top">
+        <span class="history-query">${escapeHtml(item.query.length > 60 ? item.query.slice(0, 60) + '…' : item.query)}</span>
+        <span class="history-mode-badge">${modeLabels[item.mode] || item.mode}</span>
+      </div>
+      <span class="history-time">${timeAgo}</span>
+    `;
+    el.addEventListener('click', () => {
+      userInput.value = item.query;
+      modeSelect.value = item.mode;
+      userInput.placeholder = PLACEHOLDERS[item.mode] || PLACEHOLDERS.standard;
+      renderVectors(item.vectors);
+      resultsArea.classList.remove('hidden');
+      statusContainer.classList.add('hidden');
+      updateShareURL(item.query, item.mode);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    historyList.appendChild(el);
+  });
+}
+
+function getTimeAgo(timestamp) {
+  const diff = Date.now() - timestamp;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+// ─── Shareable Vectors (Task 3.3) ────────────────────────────────────────────
+function updateShareURL(query, mode) {
+  const url = new URL(window.location);
+  url.searchParams.set('q', query);
+  url.searchParams.set('mode', mode);
+  history.replaceState(null, '', url);
+}
+
+function checkSharedParams() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('q');
+  const mode = params.get('mode');
+  if (q) {
+    userInput.value = q;
+    if (mode && modeSelect.querySelector(`option[value="${mode}"]`)) {
+      modeSelect.value = mode;
+      userInput.placeholder = PLACEHOLDERS[mode] || PLACEHOLDERS.standard;
+    }
+    handleGenerate();
+  }
+}
+
+// ─── Initialization ──────────────────────────────────────────────────────────
+renderHistory();
+checkSharedParams();
+
+// ─── Keyframes ───────────────────────────────────────────────────────────────
 const styleObj = document.createElement('style');
 styleObj.textContent = `
   @keyframes slideUp {

@@ -56,7 +56,7 @@
           <div class="select-wrapper">
             <select id="mode-select">
               <option value="standard">Standard Engine</option>
-              <option value="stranger_danger">Stranger Danger (Extreme Serendipity)</option>
+              <option value="deep_wilderness">Deep Wilderness (Extreme Serendipity)</option>
               <option value="collision">Collision (Two Unrelated Fields)</option>
             </select>
             <i data-lucide="chevron-down" class="select-icon"></i>
@@ -102,7 +102,7 @@
                 <span>Finds surprising connections to your topic from other fields.</span>
               </li>
               <li>
-                <strong>Stranger Danger</strong>
+                <strong>Deep Wilderness</strong>
                 <span>Goes wild — results will be from completely unrelated domains. For maximum surprise.</span>
               </li>
               <li>
@@ -152,7 +152,25 @@
         <!-- Vectors injected via JS -->
       </div>
     </section>
+
+    <!-- History Panel (Task 3.2) -->
+    <section id="history-panel" class="history-panel glass-panel">
+      <button id="history-toggle" class="history-toggle">
+        <span class="history-toggle-content">
+          <i data-lucide="clock" class="history-toggle-icon"></i>
+          <span>Recent Dives</span>
+        </span>
+        <i data-lucide="chevron-down" class="history-chevron"></i>
+      </button>
+      <div class="history-body">
+        <div id="history-list" class="history-list"></div>
+        <button id="clear-history-btn" class="clear-history-btn hidden">Clear History</button>
+      </div>
+    </section>
   </main>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Settings Modal -->
   <div id="settings-modal" class="modal hidden">
