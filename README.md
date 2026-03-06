@@ -79,13 +79,13 @@ The Rabbit Hole is a **BYOK (Bring Your Own Key)** application. Your Gemini API 
 
 ## Roadmap
 
-- [ ] **Dynamic input placeholders** — context-aware placeholder text per mode
-- [ ] **Saved History** — persist recent generations to `localStorage` with a "Recent Dives" panel
-- [ ] **Shareable Vectors** — encode concept + mode into URL params for linkable, replayable generations
-- [ ] **Improved error handling** — graceful, specific UI for invalid keys, quota limits, and network failures
-- [ ] **Structured AI output** — migrate from free-text parsing to Gemini JSON mode for reliable, typed responses
+- [x] **Dynamic input placeholders** — context-aware placeholder text per mode
+- [x] **Saved History** — persist recent generations to `localStorage` with a "Recent Dives" panel
+- [x] **Shareable Vectors** — encode concept + mode into URL params for linkable, replayable generations
+- [x] **Improved error handling** — graceful, specific UI for invalid keys, quota limits, and network failures
+- [x] **Structured AI output** — migrated from free-text parsing to Gemini JSON mode for reliable, typed responses
 - [ ] **Serendipity score verification** — validate surprise factor using embedding-based semantic distance
-- [ ] **Mobile polish** — responsive refinements for small screens and touch interactions
+- [x] **Mobile polish** — responsive refinements for small screens and touch interactions
 
 ## License
 
