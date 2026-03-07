@@ -200,7 +200,12 @@
       </div>
       <div class="form-group">
         <label for="api-key">Google Gemini API Key</label>
-        <input type="password" id="api-key" placeholder="AIzaSy...">
+        <div class="input-with-link">
+          <input type="password" id="api-key" placeholder="AIzaSy...">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="api-link">
+            Get key <i data-lucide="external-link"></i>
+          </a>
+        </div>
         <p class="help-text">Your key is stored locally in your browser and never sent to our servers.</p>
       </div>
       <button id="save-settings-btn" class="primary-btn secondary-btn">Save Configuration</button>
