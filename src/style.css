@@ -188,7 +188,8 @@ h2 {
 }
 
 .logo-icon {
-  color: var(--accent-neon);
+  display: block;
+  flex-shrink: 0;
 }
 
 .icon-btn {

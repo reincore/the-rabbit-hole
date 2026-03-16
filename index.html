@@ -46,7 +46,22 @@
   <header class="glass-header">
     <div class="header-content">
       <a href="/the-rabbit-hole/" class="logo" title="Back to home">
-        <i data-lucide="triangle" class="logo-icon glow-neon"></i>
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="28" height="28"
+          aria-hidden="true">
+          <defs>
+            <filter id="hdr-glow" x="-20" y="-20" width="140" height="140" filterUnits="userSpaceOnUse">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <ellipse cx="50" cy="50" rx="42" ry="19" fill="none" stroke="#00f5d4" stroke-width="4.5" opacity="0.7"
+            filter="url(#hdr-glow)" />
+          <ellipse cx="50" cy="50" rx="22" ry="10" fill="none" stroke="#9d4edd" stroke-width="4.5" opacity="0.9" />
+          <ellipse cx="50" cy="50" rx="7" ry="3.5" fill="#00f5d4" opacity="1" filter="url(#hdr-glow)" />
+        </svg>
         <h1>THE RABBIT HOLE</h1>
       </a>
       <!-- Settings button removed -->
