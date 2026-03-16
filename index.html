@@ -49,27 +49,50 @@
         <i data-lucide="triangle" class="logo-icon glow-neon"></i>
         <h1>THE RABBIT HOLE</h1>
       </div>
-      <button id="settings-btn" class="icon-btn" title="API Settings">
-        <i data-lucide="settings"></i>
-      </button>
+      <!-- Settings button removed -->
     </div>
   </header>
 
   <main class="container">
+    <!-- API Key Section -->
+    <section class="api-section glass-panel">
+      <div class="api-wrapper">
+        <div class="api-info">
+          <i data-lucide="key" class="api-icon"></i>
+          <span id="api-status-text" class="status-missing">API Key Missing</span>
+        </div>
+        <div class="api-controls">
+          <input type="password" id="main-api-key" placeholder="Enter Gemini API Key (AIzaSy...)">
+          <button id="save-key-btn" class="secondary-btn">Save</button>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="api-link">
+            Get free key <i data-lucide="external-link"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- Input Section -->
     <section class="input-section glass-panel">
       <div class="input-header">
-        <h2>Establish Launchpad</h2>
-        <p>Provide your current knowledge gravity well—topics, notes, or interests.</p>
+        <h2>Choose Your Entry Point</h2>
+        <p id="input-subtitle">Drop a topic or idea and see how deep it goes...</p>
       </div>
 
       <textarea id="user-input"
         placeholder="e.g., I've been studying artificial neural networks and how they match the brain's visual cortex..."
         rows="4"></textarea>
 
+      <div class="surprise-row">
+        <button id="surprise-btn" class="surprise-btn">
+          <i data-lucide="shuffle" class="surprise-icon"></i>
+          <span>Surprise Me</span>
+        </button>
+        <span class="surprise-hint">Don't have a topic? Let the rabbit hole pick one for you.</span>
+      </div>
+
       <div class="controls">
         <div class="mode-selector">
-          <label for="mode-select">Vector Mode</label>
+          <label for="mode-select">Descent Depth</label>
           <div class="select-wrapper">
             <select id="mode-select">
               <option value="standard">Standard Engine</option>
@@ -81,8 +104,8 @@
         </div>
 
         <button id="generate-btn" class="primary-btn glow-purple">
-          <span class="btn-text">Initiate Escape Sequence</span>
-          <i data-lucide="rocket" class="btn-icon"></i>
+          <span class="btn-text">Enter the Rabbit Hole</span>
+          <i data-lucide="arrow-down-circle" class="btn-icon"></i>
           <div class="btn-loader hidden"></div>
         </button>
       </div>
@@ -105,8 +128,7 @@
             <span class="guide-card-icon">🧠</span>
             <h4>What Is This?</h4>
             <p>The Rabbit Hole takes something you're curious about and connects it to <strong>completely unexpected
-                fields</strong> you've never explored. Think of it as a curiosity engine — it breaks you out of your
-              usual reading patterns and shows you surprising connections.</p>
+                fields</strong> you've never explored.</p>
             <p class="guide-subtle">Type in any topic, interest, or idea. The weirder and more specific, the better.</p>
           </div>
 
@@ -115,7 +137,7 @@
             <h4>The Three Modes</h4>
             <ul class="guide-list">
               <li>
-                <strong>Standard Engine</strong>
+                <strong>Standard Descent</strong>
                 <span>Finds surprising connections to your topic from other fields.</span>
               </li>
               <li>
@@ -134,11 +156,11 @@
             <h4>Reading Your Cards</h4>
             <ul class="guide-list">
               <li>
-                <strong>🔗 Why It Matters</strong>
+                <strong>🔗 Bridge</strong>
                 <span>How this connects to what you already know.</span>
               </li>
               <li>
-                <strong>✨ The Surprise</strong>
+                <strong>✨ Twist</strong>
                 <span>The mind-blowing fact that'll make you want to dig deeper.</span>
               </li>
               <li>
@@ -162,7 +184,7 @@
       <!-- Loader / Status -->
       <div id="status-container" class="status-container hidden">
         <div class="orbital-loader"></div>
-        <p id="status-text" class="status-text">Calculating optimal serendipity routes...</p>
+        <p id="status-text" class="status-text">Going down the rabbit hole... Finding strange connections...</p>
       </div>
 
       <div id="vectors-grid" class="vectors-grid">
@@ -189,28 +211,8 @@
   <!-- Toast Notifications -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="modal hidden">
-    <div class="modal-content glass-panel">
-      <div class="modal-header">
-        <h3>Engine Configuration</h3>
-        <button id="close-modal-btn" class="icon-btn">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      <div class="form-group">
-        <label for="api-key">Google Gemini API Key</label>
-        <div class="input-with-link">
-          <input type="password" id="api-key" placeholder="AIzaSy...">
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="api-link">
-            Get key <i data-lucide="external-link"></i>
-          </a>
-        </div>
-        <p class="help-text">Your key is stored locally in your browser and never sent to our servers.</p>
-      </div>
-      <button id="save-settings-btn" class="primary-btn secondary-btn">Save Configuration</button>
-    </div>
-  </div>
+  <!-- Modals Removed -->
+
 
   <script type="module" src="/src/main.js"></script>
   <script>

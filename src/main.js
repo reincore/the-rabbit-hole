@@ -1,14 +1,14 @@
 import './style.css'
 
 // ─── DOM Elements ────────────────────────────────────────────────────────────
-const settingsBtn = document.getElementById('settings-btn');
-const settingsModal = document.getElementById('settings-modal');
-const closeModalBtn = document.getElementById('close-modal-btn');
-const saveSettingsBtn = document.getElementById('save-settings-btn');
-const apiKeyInput = document.getElementById('api-key');
+const apiKeyInput = document.getElementById('main-api-key');
+const saveSettingsBtn = document.getElementById('save-key-btn');
+const apiStatusText = document.getElementById('api-status-text');
 const generateBtn = document.getElementById('generate-btn');
+const surpriseBtn = document.getElementById('surprise-btn');
 const userInput = document.getElementById('user-input');
 const modeSelect = document.getElementById('mode-select');
+const inputSubtitle = document.getElementById('input-subtitle');
 const resultsArea = document.getElementById('results-area');
 const statusContainer = document.getElementById('status-container');
 const statusText = document.getElementById('status-text');
@@ -26,9 +26,17 @@ let apiKey = localStorage.getItem('rabbit_hole_api_key') || '';
 const HISTORY_KEY = 'rabbit_hole_history';
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
-if (apiKey) {
-  apiKeyInput.value = apiKey;
+function updateApiKeyUI() {
+  if (apiKey) {
+    apiKeyInput.value = apiKey;
+    apiStatusText.textContent = 'API Key Set';
+    apiStatusText.className = 'status-set';
+  } else {
+    apiStatusText.textContent = 'Missing — You need a key to explore.';
+    apiStatusText.className = 'status-missing';
+  }
 }
+updateApiKeyUI();
 
 // ─── Dynamic Placeholders (Task 3.1) ─────────────────────────────────────────
 const PLACEHOLDERS = {
@@ -37,25 +45,27 @@ const PLACEHOLDERS = {
   collision: "e.g., Byzantine architecture / competitive powerlifting"
 };
 
+const SUBTITLES = {
+  standard: "Drop a topic or idea and see how deep it goes...",
+  deep_wilderness: "Enter any concept, and prepare to go as far outside your comfort zone as possible.",
+  collision: "Drop two unrelated ideas separated by a slash (e.g., music / botany) to find where they collide."
+};
+
 modeSelect.addEventListener('change', () => {
-  userInput.placeholder = PLACEHOLDERS[modeSelect.value] || PLACEHOLDERS.standard;
+  const mode = modeSelect.value;
+  userInput.placeholder = PLACEHOLDERS[mode] || PLACEHOLDERS.standard;
+  if (inputSubtitle) {
+    inputSubtitle.textContent = SUBTITLES[mode] || SUBTITLES.standard;
+  }
 });
 
 // ─── Event Listeners ─────────────────────────────────────────────────────────
-settingsBtn.addEventListener('click', () => {
-  settingsModal.classList.remove('hidden');
-});
-
-closeModalBtn.addEventListener('click', () => {
-  settingsModal.classList.add('hidden');
-});
-
 saveSettingsBtn.addEventListener('click', () => {
   const newKey = apiKeyInput.value.trim();
   if (newKey) {
     apiKey = newKey;
     localStorage.setItem('rabbit_hole_api_key', apiKey);
-    settingsModal.classList.add('hidden');
+    updateApiKeyUI();
     showToast('API key saved successfully');
   } else {
     showToast('Please enter a valid API key', 'error');
@@ -63,6 +73,45 @@ saveSettingsBtn.addEventListener('click', () => {
 });
 
 generateBtn.addEventListener('click', handleGenerate);
+
+// ─── Surprise Me ─────────────────────────────────────────────────────────────
+const RANDOM_TOPICS = [
+  "The way ant colonies self-organize without a leader",
+  "How sourdough fermentation works at the microbial level",
+  "The philosophy of boredom and why modern life avoids it",
+  "How medieval monks preserved knowledge before the printing press",
+  "The physics of why ice is slippery",
+  "Color perception and why we can't fully describe color to each other",
+  "How the stock market flash crashes happen and recover instantly",
+  "The linguistics of how new words enter a language",
+  "Why some songs get stuck in your head and others don't",
+  "How concrete hardens and why ancient Roman concrete outlasts ours",
+  "The evolution of human laughter",
+  "Why maps are always wrong and what we sacrifice in every projection",
+  "The psychology of why we procrastinate even on things we love",
+  "How birds navigate thousands of miles without GPS",
+  "The strange economics of free-to-play video games",
+  "Why some languages have no word for certain colors",
+  "How sleep deprivation physically changes your brain",
+  "The mathematics behind fair voting systems",
+  "Why spicy food feels like pain and why we still eat it",
+  "The history of silence as a compositional tool in music",
+  "How coral reefs communicate stress to each other",
+  "The role of forgetting in human memory and creativity",
+  "How zero was invented and why it was controversial",
+  "The psychology of crowds and why individual judgment disappears in them",
+  "Why the sky is blue but sunsets are orange"
+];
+
+surpriseBtn.addEventListener('click', () => {
+  const topic = RANDOM_TOPICS[Math.floor(Math.random() * RANDOM_TOPICS.length)];
+  userInput.value = topic;
+  // Reset to standard mode for best surprise
+  modeSelect.value = 'standard';
+  if (inputSubtitle) inputSubtitle.textContent = SUBTITLES.standard;
+  userInput.placeholder = PLACEHOLDERS.standard;
+  handleGenerate();
+});
 
 guideToggle.addEventListener('click', () => {
   guideSection.classList.toggle('expanded');
@@ -97,8 +146,8 @@ function classifyError(error, response) {
     return {
       icon: '🔑',
       title: 'No API Key',
-      message: 'No API key configured. Click the ⚙️ icon to add your Gemini key.',
-      action: { label: 'Open Settings', handler: () => settingsModal.classList.remove('hidden') }
+      message: 'No API key configured. Scroll up to add your Gemini key.',
+      action: { label: 'Enter API Key', handler: () => { apiKeyInput.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
     };
   }
   if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -113,8 +162,8 @@ function classifyError(error, response) {
     return {
       icon: '🔐',
       title: 'Invalid API Key',
-      message: 'Your API key was rejected by Google. Double-check it in Settings.',
-      action: { label: 'Open Settings', handler: () => settingsModal.classList.remove('hidden') }
+      message: 'Your API key was rejected by Google. Double-check it at the top.',
+      action: { label: 'Enter API Key', handler: () => { apiKeyInput.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
     };
   }
   if (response && response.status === 429) {
@@ -287,7 +336,7 @@ async function handleGenerate() {
 
   // UI Loading State
   generateBtn.disabled = true;
-  generateBtn.querySelector('.btn-text').textContent = 'Calculating...';
+  generateBtn.querySelector('.btn-text').textContent = 'Descending...';
   generateBtn.querySelector('.btn-icon').classList.add('hidden');
   generateBtn.querySelector('.btn-loader').classList.remove('hidden');
 
@@ -295,8 +344,11 @@ async function handleGenerate() {
   statusContainer.classList.remove('hidden');
   vectorsGrid.innerHTML = '';
 
-  statusText.textContent = 'Entering The Rabbit Hole... mapping knowledge voids...';
+  statusText.textContent = 'Entering The Rabbit Hole... finding strange connections...';
   statusText.style.color = '';
+
+  // Auto-scroll to status
+  statusContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   let lastResponse = null;
 
@@ -306,12 +358,22 @@ async function handleGenerate() {
     saveToHistory(query, mode, vectors);
     updateShareURL(query, mode);
     statusContainer.classList.add('hidden');
+
+    // Auto-scroll to results grid with offset for header
+    const headerOffset = 100;
+    const elementPosition = vectorsGrid.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth"
+    });
   } catch (error) {
     console.error(error);
     showError(classifyError(error, lastResponse));
   } finally {
     generateBtn.disabled = false;
-    generateBtn.querySelector('.btn-text').textContent = 'Initiate Escape Sequence';
+    generateBtn.querySelector('.btn-text').textContent = 'Enter the Rabbit Hole';
     generateBtn.querySelector('.btn-icon').classList.remove('hidden');
     generateBtn.querySelector('.btn-loader').classList.add('hidden');
   }
@@ -389,28 +451,23 @@ function renderVectors(vectors) {
     card.style.animationDelay = `${index * 0.15}s`;
     card.style.animation = 'slideUp 0.5s ease backwards';
 
-    const velocityLabel = dist === 'HIGH' ? '🚀 Way Out There'
-      : dist === 'MEDIUM' ? '🛰️ A Stretch'
-        : '🔭 Nearby';
-
     const searchQuery = encodeURIComponent(v.deepDiveQuery || v.title);
 
     card.innerHTML = `
       <div class="vector-header">
         <h3 class="vector-title">${escapeHtml(v.title)}</h3>
-        <span class="velocity-badge" data-velocity="${dist}">${velocityLabel}</span>
       </div>
       <div class="vector-body">
         <div class="card-section core-section">
-          <span class="section-label">🧠 Core Concept</span>
+          <span class="section-label">Concept</span>
           <p class="section-content">${escapeHtml(v.coreConcept || '')}</p>
         </div>
         <div class="card-section why-section">
-          <span class="section-label">🔗 Why It Matters</span>
+          <span class="section-label">Bridge</span>
           <p class="section-content">${escapeHtml(v.whyItMatters || '')}</p>
         </div>
         <div class="card-section surprise-section">
-          <span class="section-label">✨ The Surprise</span>
+          <span class="section-label">Twist</span>
           <p class="section-content surprise-text">${escapeHtml(v.theSurprise || '')}</p>
         </div>
         <div class="card-footer">
@@ -485,7 +542,7 @@ function renderHistory() {
   clearHistoryBtn.classList.remove('hidden');
 
   const modeLabels = {
-    standard: 'Standard',
+    standard: 'Standard Descent',
     deep_wilderness: 'Deep Wilderness',
     collision: 'Collision'
   };
@@ -543,6 +600,9 @@ function checkSharedParams() {
     if (mode && modeSelect.querySelector(`option[value="${mode}"]`)) {
       modeSelect.value = mode;
       userInput.placeholder = PLACEHOLDERS[mode] || PLACEHOLDERS.standard;
+      if (inputSubtitle) {
+        inputSubtitle.textContent = SUBTITLES[mode] || SUBTITLES.standard;
+      }
     }
     handleGenerate();
   }
