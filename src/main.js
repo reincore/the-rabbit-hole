@@ -265,10 +265,11 @@ const RESPONSE_SCHEMA = {
       whyItMatters: { type: "STRING", description: "1–2 sentences connecting this back to the user's input. Start with 'You know how...' or 'Remember when...' to ground it." },
       theSurprise: { type: "STRING", description: "One punchy sentence that makes someone stop and say 'wait, really?!'" },
       deepDiveQuery: { type: "STRING", description: "A Google search query string (NOT a URL) for exploring this further" },
-      serendipityScore: { type: "INTEGER", description: "1–10 score: how unlikely the user was to find this on their own" },
+      scoreRationale: { type: "STRING", description: "Before scoring: estimate how many Wikipedia clicks it would take to get from the user's topic to this idea, and whether this connection would appear in the first 3 pages of Google results for the topic. 1-2 sentences max." },
+      serendipityScore: { type: "INTEGER", description: "1-10 based on this rubric: 1-3 = someone Googling this topic finds this in the first few results; 4-5 = you'd find this after an afternoon of reading related articles; 6-7 = you'd need to already be curious about both fields to make this connection; 8-9 = even an expert in the input field would be surprised; 10 = virtually no one would ever connect these two ideas without help" },
       distance: { type: "STRING", enum: ["LOW", "MEDIUM", "HIGH"], description: "How far this idea is from the user's original topic" }
     },
-    required: ["title", "coreConcept", "whyItMatters", "theSurprise", "deepDiveQuery", "serendipityScore", "distance"]
+    required: ["title", "coreConcept", "whyItMatters", "theSurprise", "deepDiveQuery", "scoreRationale", "serendipityScore", "distance"]
   }
 };
 
@@ -284,7 +285,13 @@ RULES:
 - The "theSurprise" must be one sentence that makes someone stop and say "wait, really?!"
 - The "deepDiveQuery" must be a Google search query string (NOT a URL) — specific enough to surface good results.
 - Never use these words: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
-- Return exactly 3 results as a JSON array. No extra text, no markdown — pure JSON.`,
+
+SCORING:
+- Your 3 results MUST have meaningfully different serendipityScores. The highest and lowest must differ by at least 3 points. No two results may share the same score.
+- Before assigning each score, fill in scoreRationale: estimate the Wikipedia click distance from the user's topic to this idea, and whether this connection appears in obvious Google results. Use that to pick the score from the rubric.
+- Do NOT default to 7 or 8. Use the full 1-10 range. A score of 4 is perfectly fine if the connection is genuinely easy to find.
+
+Return exactly 3 results as a JSON array. No extra text, no markdown — pure JSON.`,
 
   deep_wilderness: `You are THE RABBIT HOLE in DEEP WILDERNESS mode — go as far from the user's topic as possible.
 
@@ -294,7 +301,7 @@ RULES:
 1. NO SHARED WORDS: None of your output — title, coreConcept, whyItMatters, theSurprise — may use any word that appears in or relates to the user's input. If the input is "neural networks", you may not use "neural", "network", "neuron", "net", "brain", or "connected" anywhere in your response.
 2. NO SHARED FIELDS: Every discovery must come from a completely different field than the input. If the input is about computer science, nothing can come from technology, software, or engineering.
 3. NO FAMILIAR SHORTCUTS: Don't lean on well-known comparisons. "The brain is like a computer" is off-limits. Find something genuinely unexpected.
-4. SCORE CHECK: Every result must have a serendipityScore of 8 or higher. If something scores below 8, throw it out and find something better.
+4. SCORING: Your 3 results MUST have different serendipityScores. The lowest must be at least 7, and the highest and lowest must differ by at least 2 points. No two results may share the same score. Before assigning each score, fill in scoreRationale with the Wikipedia click distance and Google results analysis. A score of 10 means virtually no human would ever connect these two ideas unaided — reserve it for genuinely alien connections.
 5. THE 3-CLICK TEST: Before you lock in any result, ask yourself: "Could someone reading about this topic stumble onto this within 3 clicks?" If yes, it's too easy — replace it.
 
 STYLE:
@@ -312,6 +319,11 @@ RULES:
 1. BOTH FIELDS REQUIRED: Each idea must genuinely need both inputs to work. If you drop one field and the idea still stands on its own, throw it out and find something better.
 2. NO CHEAP MASHUPS: Don't just borrow a fact from each field and glue them together. The idea should feel like something new that only appears when the two fields meet. An expert in Field A should find it surprising. An expert in Field B should find it surprising. But someone thinking about both should feel it click.
 3. THE SURPRISE TEST: Before you lock in any idea, ask: "If I showed this to 100 experts in Field A and 100 experts in Field B separately, would most of them predict this?" If more than 5 would, it's too obvious — replace it.
+
+SCORING:
+- Your 3 results MUST have meaningfully different serendipityScores. The highest and lowest must differ by at least 3 points. No two results may share the same score.
+- Before assigning each score, fill in scoreRationale: Would an expert in Field A predict this? Would an expert in Field B? How many conceptual leaps does it take?
+- A collision that an expert in either field might plausibly suggest scores 4-6. One that requires deep knowledge of both fields scores 7-8. One that surprises experts in both fields scores 9-10.
 
 STYLE:
 - Short, clear sentences. No jargon.
@@ -519,6 +531,7 @@ function renderVectors(vectors) {
             <div class="score-bar">
               <div class="score-fill" style="width: ${(parseInt(v.serendipityScore || 7) / 10) * 100}%"></div>
             </div>
+            ${v.scoreRationale ? `<p class="score-rationale">${escapeHtml(v.scoreRationale)}</p>` : ''}
           </div>
           <a href="https://www.google.com/search?q=${searchQuery}" target="_blank" rel="noopener noreferrer" class="research-link">
             Deep dive →
