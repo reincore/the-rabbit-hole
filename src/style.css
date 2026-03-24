@@ -246,6 +246,12 @@ h2 {
   margin-bottom: 1.5rem;
 }
 
+/* Textarea wrapper for character counter */
+.textarea-wrapper {
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
 textarea {
   width: 100%;
   background: rgba(0, 0, 0, 0.3);
@@ -253,12 +259,37 @@ textarea {
   color: #fff;
   border-radius: 12px;
   padding: 1.25rem;
+  padding-bottom: 2rem;
   font-family: inherit;
   font-size: 1.05rem;
   resize: vertical;
   min-height: 120px;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+.char-counter {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  font-size: 0.72rem;
+  font-family: var(--font-heading);
+  color: var(--text-secondary);
+  opacity: 0.5;
+  pointer-events: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.char-counter-warn {
+  color: #f5a623;
+  opacity: 0.85;
+}
+
+.char-counter-over {
+  color: #ff5050;
+  opacity: 1;
+  font-weight: 600;
 }
 
 /* Surprise Me Row */
@@ -1162,6 +1193,42 @@ select:focus {
   background: rgba(255, 255, 255, 0.04);
   border-color: var(--accent-purple);
   transform: translateX(4px);
+}
+
+/* History item wrapper with delete button */
+.history-item-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.history-item-wrapper .history-item {
+  flex: 1;
+}
+
+.history-item-delete {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 80, 80, 0);
+  color: rgba(255, 80, 80, 0);
+  border-radius: 8px;
+  width: 28px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  transition: all 0.2s ease;
+  align-self: stretch;
+}
+
+.history-item-wrapper:hover .history-item-delete {
+  color: rgba(255, 80, 80, 0.55);
+  border-color: rgba(255, 80, 80, 0.2);
+}
+
+.history-item-delete:hover {
+  background: rgba(255, 80, 80, 0.1) !important;
+  color: rgba(255, 80, 80, 0.9) !important;
+  border-color: rgba(255, 80, 80, 0.4) !important;
 }
 
 .history-item-top {

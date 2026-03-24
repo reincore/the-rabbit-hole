@@ -20,9 +20,22 @@ const historyToggle = document.getElementById('history-toggle');
 const historyList = document.getElementById('history-list');
 const clearHistoryBtn = document.getElementById('clear-history-btn');
 const toastContainer = document.getElementById('toast-container');
+const charCounter = document.getElementById('char-counter');
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let apiKey = localStorage.getItem('rabbit_hole_api_key') || '';
+const MAX_INPUT_LENGTH = 1000;
+
+// ─── UUID Fallback ────────────────────────────────────────────────────────────
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 const HISTORY_KEY = 'rabbit_hole_history';
 
 // ─── Initialize ──────────────────────────────────────────────────────────────
@@ -74,6 +87,31 @@ saveSettingsBtn.addEventListener('click', () => {
 
 generateBtn.addEventListener('click', handleGenerate);
 
+// ─── Keyboard Shortcuts ───────────────────────────────────────────────────────
+userInput.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    handleGenerate();
+  }
+});
+
+apiKeyInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    saveSettingsBtn.click();
+  }
+});
+
+// ─── Character Counter ────────────────────────────────────────────────────────
+function updateCharCounter() {
+  const len = userInput.value.length;
+  charCounter.textContent = `${len} / ${MAX_INPUT_LENGTH}`;
+  charCounter.classList.toggle('char-counter-warn', len > MAX_INPUT_LENGTH * 0.9);
+  charCounter.classList.toggle('char-counter-over', len >= MAX_INPUT_LENGTH);
+}
+
+userInput.addEventListener('input', updateCharCounter);
+
 // ─── Surprise Me ─────────────────────────────────────────────────────────────
 const RANDOM_TOPICS = [
   "The way ant colonies self-organize without a leader",
@@ -115,10 +153,12 @@ surpriseBtn.addEventListener('click', () => {
 
 guideToggle.addEventListener('click', () => {
   guideSection.classList.toggle('expanded');
+  guideToggle.setAttribute('aria-expanded', guideSection.classList.contains('expanded'));
 });
 
 historyToggle.addEventListener('click', () => {
   historyPanel.classList.toggle('expanded');
+  historyToggle.setAttribute('aria-expanded', historyPanel.classList.contains('expanded'));
 });
 
 clearHistoryBtn.addEventListener('click', () => {
@@ -309,6 +349,10 @@ async function handleGenerate() {
   if (!query) {
     showError(classifyError(new Error('empty_input')));
     resultsArea.classList.remove('hidden');
+    return;
+  }
+  if (query.length > MAX_INPUT_LENGTH) {
+    showToast(`Input too long — keep it under ${MAX_INPUT_LENGTH} characters`, 'error');
     return;
   }
   if (!apiKey) {
@@ -519,7 +563,7 @@ function escapeHtml(str) {
 function saveToHistory(query, mode, vectors) {
   const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
   history.unshift({
-    id: crypto.randomUUID(),
+    id: generateId(),
     query,
     mode,
     vectors,
@@ -548,6 +592,9 @@ function renderHistory() {
   };
 
   history.forEach(item => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'history-item-wrapper';
+
     const el = document.createElement('button');
     el.className = 'history-item';
     const timeAgo = getTimeAgo(item.timestamp);
@@ -562,14 +609,36 @@ function renderHistory() {
       userInput.value = item.query;
       modeSelect.value = item.mode;
       userInput.placeholder = PLACEHOLDERS[item.mode] || PLACEHOLDERS.standard;
+      if (inputSubtitle) inputSubtitle.textContent = SUBTITLES[item.mode] || SUBTITLES.standard;
       renderVectors(item.vectors);
       resultsArea.classList.remove('hidden');
       statusContainer.classList.add('hidden');
       updateShareURL(item.query, item.mode);
+      updateCharCounter();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
-    historyList.appendChild(el);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'history-item-delete';
+    deleteBtn.setAttribute('aria-label', 'Delete this history entry');
+    deleteBtn.textContent = '×';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteHistoryItem(item.id);
+    });
+
+    wrapper.appendChild(el);
+    wrapper.appendChild(deleteBtn);
+    historyList.appendChild(wrapper);
   });
+}
+
+function deleteHistoryItem(id) {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  const updated = history.filter(item => item.id !== id);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  renderHistory();
+  showToast('Entry removed');
 }
 
 function getTimeAgo(timestamp) {
