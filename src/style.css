@@ -1009,6 +1009,15 @@ select:focus {
   transition: width 0.6s ease;
 }
 
+/* Score Rationale */
+.score-rationale {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 0.35rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
 /* Research Link */
 .research-link {
   font-family: var(--font-heading);
