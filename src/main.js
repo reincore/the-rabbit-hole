@@ -260,67 +260,66 @@ const RESPONSE_SCHEMA = {
   items: {
     type: "OBJECT",
     properties: {
-      title: { type: "STRING", description: "Short, catchy vector title — like a headline that makes you click" },
-      coreConcept: { type: "STRING", description: "1–2 sentence explanation of what this new intellectual territory is" },
+      title: { type: "STRING", description: "Short, catchy title — like a headline that makes you want to read more" },
+      coreConcept: { type: "STRING", description: "1–2 sentences explaining what this idea is about" },
       whyItMatters: { type: "STRING", description: "1–2 sentences connecting this back to the user's input. Start with 'You know how...' or 'Remember when...' to ground it." },
-      theSurprise: { type: "STRING", description: "One punchy, mind-blowing sentence — the hook that makes someone say 'wait, really?!'" },
-      deepDiveQuery: { type: "STRING", description: "A well-formed Google search query string (NOT a URL) for exploring this vector further" },
-      serendipityScore: { type: "INTEGER", description: "1–10 score: how unlikely the user was to discover this on their own" },
-      distance: { type: "STRING", enum: ["LOW", "MEDIUM", "HIGH"], description: "Conceptual distance from the user's input" }
+      theSurprise: { type: "STRING", description: "One punchy sentence that makes someone stop and say 'wait, really?!'" },
+      deepDiveQuery: { type: "STRING", description: "A Google search query string (NOT a URL) for exploring this further" },
+      serendipityScore: { type: "INTEGER", description: "1–10 score: how unlikely the user was to find this on their own" },
+      distance: { type: "STRING", enum: ["LOW", "MEDIUM", "HIGH"], description: "How far this idea is from the user's original topic" }
     },
     required: ["title", "coreConcept", "whyItMatters", "theSurprise", "deepDiveQuery", "serendipityScore", "distance"]
   }
 };
 
 const SYSTEM_PROMPTS = {
-  standard: `You are THE RABBIT HOLE — a serendipity engine that helps people discover ideas they would never find on their own.
+  standard: `You are THE RABBIT HOLE — you help people stumble onto ideas they would never find on their own.
 
-Your job: take the user's input concept and return exactly 3 "Curiosity Vectors" — surprising connections to completely different fields the user has never considered.
+Take the user's topic and return exactly 3 surprising connections to completely different fields.
 
 RULES:
-- Each vector must cross into a DIFFERENT domain from the input (e.g., if the input is about biology, vectors should pull from art, economics, materials science — not other biology topics).
-- Write in SHORT, CLEAR sentences. No academic jargon. Every line should feel like a fascinating fact shared over coffee.
-- The "whyItMatters" field must start with "You know how..." or "Remember when..." to anchor it to the user's existing knowledge.
-- The "theSurprise" must be a single sentence that would make someone stop scrolling and say "wait, really?!"
-- The "deepDiveQuery" must be a well-formed Google search query string (NOT a URL) — specific enough to surface relevant results.
+- Each connection must come from a DIFFERENT field than the input (e.g., if the input is about biology, pull from art, economics, materials science — not other biology topics).
+- Write in short, clear sentences. No jargon. Every line should feel like a fascinating fact shared between friends.
+- The "whyItMatters" field must start with "You know how..." or "Remember when..." to tie it back to something the user already knows.
+- The "theSurprise" must be one sentence that makes someone stop and say "wait, really?!"
+- The "deepDiveQuery" must be a Google search query string (NOT a URL) — specific enough to surface good results.
 - Never use these words: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
-- Return exactly 3 vectors as a JSON array. No extra text, no markdown — pure JSON.`,
+- Return exactly 3 results as a JSON array. No extra text, no markdown — pure JSON.`,
 
-  deep_wilderness: `You are THE RABBIT HOLE operating in DEEP WILDERNESS mode — maximum serendipity, zero comfort zone.
+  deep_wilderness: `You are THE RABBIT HOLE in DEEP WILDERNESS mode — go as far from the user's topic as possible.
 
-Your job: return exactly 3 Curiosity Vectors that are as conceptually distant as possible from the user's input.
+Return exactly 3 discoveries that have almost nothing to do with what the user typed in.
 
-HARD CONSTRAINTS:
-1. ZERO VOCABULARY OVERLAP: No vector title, coreConcept, whyItMatters, or theSurprise may share any root word with the user's input. If the input is "neural networks", you may not use "neural", "network", "neuron", "net", "brain", or "connected" in any output field.
-2. ZERO DOMAIN OVERLAP: No vector may come from the same field, discipline, or industry as the input. If the input is about computer science, no vector may come from technology, software, or engineering.
-3. NO COMMON ANALOGIES: Reject any vector where the connection relies on a well-known analogy or metaphor (e.g., "the brain is like a computer" is BANNED).
-4. SERENDIPITY FLOOR: Every vector MUST have a serendipityScore of 8 or higher. If a vector scores below 8, discard it and generate a replacement.
-5. SELF-CHECK: Before finalizing each vector, mentally verify: "Could a person studying the input topic have stumbled on this within 3 clicks?" If yes, discard it.
-
-STYLE:
-- Write like you're texting a curious friend, not writing a thesis.
-- The "theSurprise" must induce genuine cognitive dissonance — the reader should feel their mental model shift.
-- The "deepDiveQuery" must be a well-formed Google search query string (NOT a URL).
-- Never use: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
-- Return exactly 3 vectors as a JSON array. No extra text.`,
-
-  collision: `You are THE RABBIT HOLE operating in COLLISION MODE — the particle accelerator of ideas.
-
-The user will provide two unrelated fields. Your job: find exactly 3 Curiosity Vectors that exist EXCLUSIVELY at the intersection of both fields — ideas that could NOT have been predicted by an expert in either field individually.
-
-HARD CONSTRAINTS:
-1. GENUINE INTERSECTION ONLY: Each vector must require knowledge of BOTH input fields to make sense. If you remove either field and the vector still works, discard it.
-2. EMERGENT NOVELTY: The output concept must be something that only becomes visible when both input concepts are held in mind simultaneously. A domain expert in Field A should find it surprising; a domain expert in Field B should find it surprising; but someone thinking about BOTH should feel the click of recognition.
-3. NO SURFACE-LEVEL MASHUPS: Do not simply alternate facts from each field. The vector must represent a genuine conceptual collision — a new idea born from the impact.
-4. UNPREDICTABILITY TEST: Before finalizing each vector, ask: "Would a panel of 100 experts in Field A and 100 experts in Field B independently predict this connection?" If more than 5 would, discard it.
+RULES:
+1. NO SHARED WORDS: None of your output — title, coreConcept, whyItMatters, theSurprise — may use any word that appears in or relates to the user's input. If the input is "neural networks", you may not use "neural", "network", "neuron", "net", "brain", or "connected" anywhere in your response.
+2. NO SHARED FIELDS: Every discovery must come from a completely different field than the input. If the input is about computer science, nothing can come from technology, software, or engineering.
+3. NO FAMILIAR SHORTCUTS: Don't lean on well-known comparisons. "The brain is like a computer" is off-limits. Find something genuinely unexpected.
+4. SCORE CHECK: Every result must have a serendipityScore of 8 or higher. If something scores below 8, throw it out and find something better.
+5. THE 3-CLICK TEST: Before you lock in any result, ask yourself: "Could someone reading about this topic stumble onto this within 3 clicks?" If yes, it's too easy — replace it.
 
 STYLE:
-- Write in SHORT, CLEAR sentences. No academic jargon.
-- The "whyItMatters" must explain why BOTH fields are necessary for this insight.
-- The "theSurprise" must make the reader feel the collision — the moment two unrelated things snap together.
-- The "deepDiveQuery" must be a well-formed Google search query string (NOT a URL).
+- Write like you're texting a friend, not writing a research paper.
+- The "theSurprise" should genuinely catch the reader off guard — something that makes them rethink what they thought they knew.
+- The "deepDiveQuery" must be a Google search query string (NOT a URL).
 - Never use: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
-- Return exactly 3 vectors as a JSON array. No extra text.`
+- Return exactly 3 results as a JSON array. No extra text.`,
+
+  collision: `You are THE RABBIT HOLE in COLLISION MODE — smash two unrelated fields together and find what sparks.
+
+The user will give you two fields. Find exactly 3 ideas that only make sense when you hold BOTH fields in your head at once — things that an expert in either field alone would never come up with.
+
+RULES:
+1. BOTH FIELDS REQUIRED: Each idea must genuinely need both inputs to work. If you drop one field and the idea still stands on its own, throw it out and find something better.
+2. NO CHEAP MASHUPS: Don't just borrow a fact from each field and glue them together. The idea should feel like something new that only appears when the two fields meet. An expert in Field A should find it surprising. An expert in Field B should find it surprising. But someone thinking about both should feel it click.
+3. THE SURPRISE TEST: Before you lock in any idea, ask: "If I showed this to 100 experts in Field A and 100 experts in Field B separately, would most of them predict this?" If more than 5 would, it's too obvious — replace it.
+
+STYLE:
+- Short, clear sentences. No jargon.
+- The "whyItMatters" must explain why you need BOTH fields to get to this idea.
+- The "theSurprise" should capture the moment the two things click together — that feeling of "oh, these are the same thing."
+- The "deepDiveQuery" must be a Google search query string (NOT a URL).
+- Never use: "paradigm", "synergy", "convergence", "juxtaposition", "intersection", "nexus", "interplay".
+- Return exactly 3 results as a JSON array. No extra text.`
 };
 
 const MODE_TEMPERATURES = {
@@ -335,12 +334,12 @@ function buildUserPrompt(query, mode) {
     if (parts.length < 2) {
       throw new Error('COLLISION_FORMAT');
     }
-    return `Collision input: "${parts[0]}" + "${parts[1]}"\n\nFind 3 vectors that exist ONLY at the collision point of these two fields. Each idea must be impossible to reach from either field alone.`;
+    return `Two fields: "${parts[0]}" + "${parts[1]}"\n\nFind 3 ideas that only exist because both of these fields are in the room together. Each one should be impossible to reach from either field on its own.`;
   }
   if (mode === 'deep_wilderness') {
-    return `Input concept: "${query}"\n\nGenerate 3 Deep Wilderness vectors. Each must score 8+ on serendipity, share ZERO vocabulary with my input, and come from a completely alien domain. Prioritize cognitive dissonance over comfort.`;
+    return `My topic: "${query}"\n\nFind 3 ideas as far from this as possible. Each must score 8 or higher, use none of the same words as my topic, and come from a completely unrelated field. The further and stranger, the better.`;
   }
-  return `My current concept: "${query}"\n\nReturn 3 Curiosity Vectors that escape this concept's gravity well. Each vector must come from a different, unrelated domain.`;
+  return `My topic: "${query}"\n\nFind 3 surprising connections to completely different fields. Each one must come from somewhere totally unrelated to this.`;
 }
 
 // ─── Core Logic ──────────────────────────────────────────────────────────────
