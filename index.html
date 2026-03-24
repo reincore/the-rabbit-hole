@@ -93,13 +93,17 @@
         <p id="input-subtitle">Drop a topic or idea and see how deep it goes...</p>
       </div>
 
-      <textarea id="user-input"
-        placeholder="e.g., I've been studying artificial neural networks and how they match the brain's visual cortex..."
-        rows="4"></textarea>
+      <div class="textarea-wrapper">
+        <textarea id="user-input"
+          aria-label="Enter your topic or idea"
+          placeholder="e.g., I've been studying artificial neural networks and how they match the brain's visual cortex..."
+          rows="4" maxlength="1000"></textarea>
+        <span id="char-counter" class="char-counter" aria-live="polite">0 / 1000</span>
+      </div>
 
       <div class="surprise-row">
-        <button id="surprise-btn" class="surprise-btn">
-          <i data-lucide="shuffle" class="surprise-icon"></i>
+        <button id="surprise-btn" class="surprise-btn" aria-label="Pick a random topic and generate">
+          <i data-lucide="shuffle" class="surprise-icon" aria-hidden="true"></i>
           <span>Surprise Me</span>
         </button>
         <span class="surprise-hint">Don't have a topic? Let the rabbit hole pick one for you.</span>
@@ -118,22 +122,22 @@
           </div>
         </div>
 
-        <button id="generate-btn" class="primary-btn glow-purple">
+        <button id="generate-btn" class="primary-btn glow-purple" title="Generate (Ctrl+Enter / Cmd+Enter)">
           <span class="btn-text">Enter the Rabbit Hole</span>
-          <i data-lucide="arrow-down-circle" class="btn-icon"></i>
-          <div class="btn-loader hidden"></div>
+          <i data-lucide="arrow-down-circle" class="btn-icon" aria-hidden="true"></i>
+          <div class="btn-loader hidden" aria-hidden="true"></div>
         </button>
       </div>
     </section>
 
     <!-- How It Works Guide -->
     <section class="guide-section glass-panel">
-      <button id="guide-toggle" class="guide-toggle">
+      <button id="guide-toggle" class="guide-toggle" aria-expanded="false" aria-controls="guide-body">
         <span class="guide-toggle-content">
-          <i data-lucide="info" class="guide-toggle-icon"></i>
+          <i data-lucide="info" class="guide-toggle-icon" aria-hidden="true"></i>
           <span>How does this work?</span>
         </span>
-        <i data-lucide="chevron-down" class="guide-chevron"></i>
+        <i data-lucide="chevron-down" class="guide-chevron" aria-hidden="true"></i>
       </button>
 
       <div id="guide-body" class="guide-body">
@@ -212,16 +216,16 @@
 
     <!-- History Panel (Task 3.2) -->
     <section id="history-panel" class="history-panel glass-panel">
-      <button id="history-toggle" class="history-toggle">
+      <button id="history-toggle" class="history-toggle" aria-expanded="false" aria-controls="history-list">
         <span class="history-toggle-content">
-          <i data-lucide="clock" class="history-toggle-icon"></i>
+          <i data-lucide="clock" class="history-toggle-icon" aria-hidden="true"></i>
           <span>Recent Dives</span>
         </span>
-        <i data-lucide="chevron-down" class="history-chevron"></i>
+        <i data-lucide="chevron-down" class="history-chevron" aria-hidden="true"></i>
       </button>
       <div class="history-body">
         <div id="history-list" class="history-list"></div>
-        <button id="clear-history-btn" class="clear-history-btn hidden">Clear History</button>
+        <button id="clear-history-btn" class="clear-history-btn hidden" aria-label="Clear all history">Clear History</button>
       </div>
     </section>
   </main>
